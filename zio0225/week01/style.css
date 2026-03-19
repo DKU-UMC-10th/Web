@@ -1,0 +1,118 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f1f1f1;
+  font-family: 'Roboto', sans-serif;
+}
+
+.todo-container {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  width: 350px;
+  text-align: center;
+}
+
+.todo-container__header {
+  font-size: 24px;
+  margin-bottom: 16px;
+}
+
+.todo-container__form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.todo-container__input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.todo-container__button {
+  background-color: green;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: 0.3s;
+}
+
+.todo-container__button:hover {
+  background-color: #218838;
+}
+
+.render-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+}
+
+.render-container__section {
+  width: 48%;
+  text-align: left;
+}
+
+.render-container__title {
+  font-size: 18px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.render-container__list {
+  list-style: none;
+}
+
+.render-container__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.render-container__item-text {
+  flex: 1;
+}
+
+.render-container__item-button {
+  border: none;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 12px;
+  color: white;
+}
+
+.render-container__item-button.complete {
+  background-color: #28a745;
+}
+
+.render-container__item-button.delete {
+  background-color: #dc3545;
+}
+
+.render-container__item-button.complete:hover {
+  background-color: #218838;
+}
+
+.render-container__item-button.delete:hover {
+  background-color: #c82333;
+}
