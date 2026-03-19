@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YONG TODO</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main class="todo">
+    <h1 class="todo__title">YONG TODO</h1>
+
+    <form class="todo__form" id="todo-form">
+      <input
+        class="todo__input"
+        id="todo-input"
+        type="text"
+        placeholder="할 일 입력"
+      />
+      <button class="todo__add-button" type="submit">할 일 추가</button>
+    </form>
+
+    <section class="todo__board">
+      <div class="todo__column todo__column--pending">
+        <h2 class="todo__heading">할 일</h2>
+        <ul class="todo__list" id="todo-list"></ul>
+      </div>
+
+      <div class="todo__column todo__column--completed">
+        <h2 class="todo__heading">완료</h2>
+        <ul class="todo__list" id="done-list"></ul>
+      </div>
+    </section>
+  </main>
+
+  <!--브라우저는 .ts파일을 그대로 실행하지 못한다. main.ts를 컴파일해서 main.js로 만든 뒤, HTML에서는 그 JS를 연결해야 한다.-->
+  <!--npm은 Node.js의 패키지를 관리할 수 있게도와주는 도구, python의 pip-->
+  <!--npx tsc는 tsconfig.json가 있는 폴더 안에서 실행-->
+  <script type="module" src="./dist/main.js"></script>
+</body>
+</html>
