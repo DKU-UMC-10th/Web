@@ -1,27 +1,29 @@
-// src/App.jsx
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext'; // 👈 꼭 감싸줘야 함!
+import { AuthProvider } from './context/AuthContext'; 
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
-import SignupPage from './pages/SignupPage'; // 👈 import 확인!
+import SignupPage from './pages/SignupPage'; 
 import MyPage from './pages/MyPage'; 
 
 function App() {
   return (
-    <AuthProvider> {/* 👈 이게 있어야 isLoggedIn 정보를 읽어옵니다 */}
+    <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* 1. 누구나 갈 수 있는 페이지 */}
+          {/* 누구나 접근 가능한 페이지 */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           
-          {/* 기본 경로 접속 시 로그인으로 리다이렉트 */}
+          {/* 기본 경로 접속 시 로그인 페이지로 이동 */}
           <Route path="/" element={<Navigate to="/login" replace />} />
 
-          {/* 2. 로그인한 사람만 갈 수 있는 페이지 */}
+          {/* 🥊 로그인한 사람만 들어갈 수 있는 비밀 통로! */}
           <Route element={<ProtectedRoute />}>
             <Route path="/mypage" element={<MyPage />} />
           </Route>
+          
+          {/* 잘못된 주소로 들어오면 로그인으로 보내버리기 */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
