@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useGoogleLogin } from '@react-oauth/google'; // 커스텀 버튼용 훅
 import useForm from '../hooks/useForm';
 import { validateLogin } from '../utils/validate';
 import api from '../api/axios'; 
@@ -16,6 +17,17 @@ const LoginPage = () => {
         validateLogin
     );
 
+    // 🥊 구글 로그인 로직 (커스텀 버튼 클릭 시 실행)
+    const googleLogin = useGoogleLogin({
+        onSuccess: (codeResponse) => {
+            console.log("구글 로그인 성공!", codeResponse);
+            // 여기서 백엔드에 토큰을 보내거나, 바로 마이페이지로 이동시킵니다.
+            alert("구글 로그인에 성공했습니다! 🥳");
+            window.location.href = '/mypage';
+        },
+        onError: (error) => console.log('구글 로그인 실패:', error)
+    });
+
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
@@ -28,20 +40,13 @@ const LoginPage = () => {
             const { accessToken, refreshToken } = result;
 
             if (accessToken && refreshToken) {
-                // 1. 토큰 저장
                 localStorage.setItem('accessToken', accessToken);
                 localStorage.setItem('refreshToken', refreshToken);
-
                 alert("로그인에 성공했습니다! 🥳");
-
-                // 2. 중요: navigate 대신 window.location.href를 사용합니다.
-                // 이렇게 하면 페이지가 새로고침되면서 마이페이지로 이동하므로
-                // "로그인이 필요한 페이지입니다"라는 에러를 100% 피할 수 있습니다.
                 window.location.href = '/mypage';
             } else {
                 throw new Error("토큰을 찾을 수 없습니다.");
             }
-
         } catch (error) {
             console.error("로그인 에러:", error);
             const errorMessage = error.response?.data?.message || "아이디 또는 비밀번호를 확인해주세요.";
@@ -82,7 +87,12 @@ const LoginPage = () => {
                     </div>
 
                     <form className="space-y-5" onSubmit={handleLogin}>
-                        <button type="button" className="w-full p-3.5 bg-transparent border border-zinc-700 rounded-xl flex items-center justify-center gap-3 text-white font-medium hover:bg-zinc-900 transition-all">
+                        {/* 🥊 구글 로그인 버튼에 onClick={googleLogin} 추가! */}
+                        <button 
+                            type="button" 
+                            onClick={() => googleLogin()}
+                            className="w-full p-3.5 bg-transparent border border-zinc-700 rounded-xl flex items-center justify-center gap-3 text-white font-medium hover:bg-zinc-900 transition-all"
+                        >
                             <img 
                                 src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" 
                                 alt="Google" 
