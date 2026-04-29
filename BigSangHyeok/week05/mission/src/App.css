@@ -125,6 +125,42 @@
   opacity: 0.7;
 }
 
+.mission-box {
+  background: #f8faff;
+  border: 1px solid #cbd8ff;
+  border-radius: 8px;
+  margin: 24px 0;
+  padding: 16px;
+  text-align: left;
+}
+
+.mission-box strong {
+  color: #1e4fd8;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.mission-box p {
+  margin: 0 0 8px;
+}
+
+.mission-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.mission-actions button {
+  border: 0;
+  border-radius: 6px;
+  background: #202431;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  padding: 10px 12px;
+}
+
 .error {
   background: #fff1f2;
   border: 1px solid #fecdd3;
