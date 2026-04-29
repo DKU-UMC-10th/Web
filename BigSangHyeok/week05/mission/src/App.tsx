@@ -15,6 +15,8 @@ import {
 import { axiosInstance, publicAxios } from './apis/axios'
 import './App.css'
 
+const API_URL = import.meta.env.VITE_SERVER_API_URL ?? 'http://localhost:8000'
+
 type UserInfo = {
   id: number
   name: string
@@ -48,6 +50,13 @@ function getErrorMessage(error: unknown, fallback: string) {
   }
 
   return fallback
+}
+
+function getTokenFromUrl(search: string, hash: string, key: string) {
+  const queryParams = new URLSearchParams(search)
+  const hashParams = new URLSearchParams(hash.replace(/^#/, ''))
+
+  return queryParams.get(key) ?? hashParams.get(key)
 }
 
 function ProtectedRoute() {
@@ -104,13 +113,25 @@ function HomePage() {
       <p className="eyebrow">Public Page</p>
       <h1>인증이 필요 없는 홈 페이지</h1>
       <p>
-        로그인 후 access token이 만료되어도 Axios 응답 인터셉터가 refresh token으로
-        토큰을 재발급받고 실패한 요청을 한 번 더 실행합니다.
+        이메일 로그인과 Google 소셜 로그인을 모두 사용할 수 있습니다. 로그인 후
+        보호된 페이지에 접근하면 토큰이 필요한 API만 호출합니다.
       </p>
       <Link className="primary-link" to="/my">
         보호된 내 정보 페이지로 이동
       </Link>
     </section>
+  )
+}
+
+function GoogleLoginButton() {
+  const handleGoogleLogin = () => {
+    window.location.href = `${API_URL}/v1/auth/google/login`
+  }
+
+  return (
+    <button type="button" className="google-button" onClick={handleGoogleLogin}>
+      Google로 로그인
+    </button>
   )
 }
 
@@ -154,6 +175,8 @@ function LoginPage() {
     <section className="panel compact">
       <p className="eyebrow">Login</p>
       <h1>로그인</h1>
+      <GoogleLoginButton />
+      <div className="divider">또는 이메일로 로그인</div>
       <form className="form" onSubmit={handleSubmit}>
         <label>
           이메일
@@ -180,6 +203,49 @@ function LoginPage() {
           {isLoading ? '로그인 중...' : '로그인'}
         </button>
       </form>
+    </section>
+  )
+}
+
+function GoogleCallbackPage() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { setIsLoggedIn } = useOutletContext<{
+    setIsLoggedIn: (isLoggedIn: boolean) => void
+  }>()
+  const [message, setMessage] = useState('Google 로그인 처리 중...')
+
+  useEffect(() => {
+    const accessToken = getTokenFromUrl(
+      location.search,
+      location.hash,
+      'accessToken',
+    )
+    const refreshToken = getTokenFromUrl(
+      location.search,
+      location.hash,
+      'refreshToken',
+    )
+
+    if (!accessToken || !refreshToken) {
+      setMessage('Google 로그인 토큰을 찾을 수 없습니다.')
+      return
+    }
+
+    localStorage.setItem('accessToken', accessToken)
+    localStorage.setItem('refreshToken', refreshToken)
+    setIsLoggedIn(true)
+    navigate('/my', { replace: true })
+  }, [location.hash, location.search, navigate, setIsLoggedIn])
+
+  return (
+    <section className="panel compact">
+      <p className="eyebrow">Google Callback</p>
+      <h1>Google 로그인</h1>
+      <p>{message}</p>
+      <Link className="primary-link" to="/login">
+        로그인 페이지로 이동
+      </Link>
     </section>
   )
 }
@@ -217,6 +283,8 @@ function SignupPage() {
     <section className="panel compact">
       <p className="eyebrow">Signup</p>
       <h1>회원가입</h1>
+      <GoogleLoginButton />
+      <div className="divider">또는 이메일로 회원가입</div>
       <form className="form" onSubmit={handleSubmit}>
         <label>
           이름
@@ -368,6 +436,8 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="signup" element={<SignupPage />} />
+          <Route path="google/callback" element={<GoogleCallbackPage />} />
+          <Route path="auth/google/callback" element={<GoogleCallbackPage />} />
           <Route element={<ProtectedRoute />}>
             <Route path="my" element={<MyPage />} />
           </Route>
