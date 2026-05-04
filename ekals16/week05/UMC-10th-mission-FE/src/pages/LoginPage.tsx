@@ -28,6 +28,10 @@ const LoginPage = () => {
         await login(values);
     };
 
+    const handleGoogleLogin = () => {
+        window.location.href = import.meta.env.VITE_SERVER_API_URL + "/v1/auth/google/login";
+    };
+
     //오류가 하나라도 있거나, 입력값이 비어있으면 버튼을 비활성화
     const isDisabled = 
     Object.values(errors || {}).some((error) => error.length > 0) ||
@@ -50,7 +54,8 @@ const LoginPage = () => {
 
             <button
                 type="button"
-                className="mb-6 flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-zinc-500 bg-black text-sm font-semibold text-zinc-100"
+                onClick={handleGoogleLogin}
+                className="mb-6 flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-zinc-500 bg-black text-sm font-semibold text-zinc-100 transition-all hover:border-pink-400 hover:bg-zinc-900/70 hover:text-white hover:shadow-[0_0_0_2px_rgba(236,72,153,0.25)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/70"
             >
                 <span className="text-xl font-black text-transparent bg-clip-text bg-[linear-gradient(90deg,#4285F4_0%,#EA4335_35%,#FBBC05_70%,#34A853_100%)]">G</span>
                 구글 로그인
@@ -92,7 +97,11 @@ const LoginPage = () => {
                     type='button'
                     onClick={handleSubmit}
                     disabled={isDisabled}
-                    className="mt-2 h-12 w-full rounded-lg bg-zinc-800 text-sm font-semibold text-zinc-200 transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-900 disabled:text-zinc-500"
+                    className={`mt-2 h-12 w-full rounded-lg text-sm font-semibold transition-colors ${
+                        isDisabled
+                            ? 'cursor-not-allowed bg-zinc-900 text-zinc-500'
+                            : 'bg-pink-500 text-white hover:bg-pink-400'
+                    }`}
                 >
                     로그인
                 </button>
