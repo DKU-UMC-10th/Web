@@ -1,4 +1,6 @@
 @import "tailwindcss";
+
+/* 이 아래에 기존 CSS 코드 유지 */
 :root {
   --text: #6b6375;
   --text-h: #08060d;
@@ -51,6 +53,10 @@
   }
 }
 
+body {
+  margin: 0;
+}
+
 #root {
   width: 1126px;
   max-width: 100%;
@@ -61,10 +67,6 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-}
-
-body {
-  margin: 0;
 }
 
 h1,
