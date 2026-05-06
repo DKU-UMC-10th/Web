@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+body.sidebar-open .sidebar {
+    transform: translateX(0);
+}
+
+body.sidebar-open .sidebar-backdrop {
+    display: block;
+}
