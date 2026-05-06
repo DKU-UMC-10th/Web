@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import {
@@ -7,13 +8,12 @@ import {
   Outlet,
   Route,
   Routes,
-  useOutletContext,
   useLocation,
   useNavigate,
+  useOutletContext,
 } from 'react-router-dom'
+import { axiosInstance, publicAxios } from './apis/axios'
 import './App.css'
-
-const API_URL = import.meta.env.VITE_SERVER_API_URL ?? 'http://localhost:8000'
 
 type UserInfo = {
   id: number
@@ -29,8 +29,25 @@ type ApiResponse<T> = {
   data: T
 }
 
+type TokenResponse = {
+  accessToken: string
+  refreshToken: string
+}
+
 function getAccessToken() {
   return localStorage.getItem('accessToken')
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (axios.isAxiosError<ApiResponse<unknown>>(error)) {
+    if (!error.response) {
+      return '서버에 연결할 수 없습니다. 백엔드 서버가 http://localhost:8000 에서 실행 중인지 확인해주세요.'
+    }
+
+    return error.response.data?.message ?? fallback
+  }
+
+  return fallback
 }
 
 function ProtectedRoute() {
@@ -87,8 +104,8 @@ function HomePage() {
       <p className="eyebrow">Public Page</p>
       <h1>인증이 필요 없는 홈 페이지</h1>
       <p>
-        Swagger에서 자물쇠가 없는 API나 공개 화면은 그대로 접근할 수 있고, 자물쇠가
-        있는 API를 사용하는 화면만 Protected Route로 보호합니다.
+        로그인 후 access token이 만료되어도 Axios 응답 인터셉터가 refresh token으로
+        토큰을 재발급받고 실패한 요청을 한 번 더 실행합니다.
       </p>
       <Link className="primary-link" to="/my">
         보호된 내 정보 페이지로 이동
@@ -107,7 +124,9 @@ function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const from = (location.state as { from?: Location })?.from?.pathname ?? '/my'
+  const from =
+    (location.state as { from?: { pathname: string } } | null)?.from?.pathname ??
+    '/my'
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -115,24 +134,17 @@ function LoginPage() {
     setIsLoading(true)
 
     try {
-      const response = await fetch(`${API_URL}/v1/auth/signin`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-      const result: ApiResponse<{ accessToken: string; refreshToken: string }> =
-        await response.json()
+      const { data } = await publicAxios.post<ApiResponse<TokenResponse>>(
+        '/v1/auth/signin',
+        { email, password },
+      )
 
-      if (!response.ok) {
-        throw new Error(result.message)
-      }
-
-      localStorage.setItem('accessToken', result.data.accessToken)
-      localStorage.setItem('refreshToken', result.data.refreshToken)
+      localStorage.setItem('accessToken', data.data.accessToken)
+      localStorage.setItem('refreshToken', data.data.refreshToken)
       setIsLoggedIn(true)
       navigate(from, { replace: true })
     } catch (err) {
-      setError(err instanceof Error ? err.message : '로그인에 실패했습니다.')
+      setError(getErrorMessage(err, '로그인에 실패했습니다.'))
     } finally {
       setIsLoading(false)
     }
@@ -186,21 +198,16 @@ function SignupPage() {
     setIsLoading(true)
 
     try {
-      const response = await fetch(`${API_URL}/v1/auth/signup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+      await publicAxios.post<ApiResponse<unknown>>('/v1/auth/signup', {
+        name,
+        email,
+        password,
       })
-      const result: ApiResponse<unknown> = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.message)
-      }
 
       alert('회원가입이 완료되었습니다. 로그인해주세요.')
       navigate('/login')
     } catch (err) {
-      setError(err instanceof Error ? err.message : '회원가입에 실패했습니다.')
+      setError(getErrorMessage(err, '회원가입에 실패했습니다.'))
     } finally {
       setIsLoading(false)
     }
@@ -253,35 +260,72 @@ function SignupPage() {
 function MyPage() {
   const [user, setUser] = useState<UserInfo | null>(null)
   const [error, setError] = useState('')
+  const [status, setStatus] = useState('보호 API 요청 대기 중')
+  const [refreshCount, setRefreshCount] = useState(0)
+
+  const fetchMyInfo = async () => {
+    setError('')
+    setStatus('GET /v1/users/me 요청 중...')
+
+    try {
+      const { data } =
+        await axiosInstance.get<ApiResponse<UserInfo>>('/v1/users/me')
+
+      setUser(data.data)
+      setStatus('보호 API 요청 성공')
+    } catch (err) {
+      setError(getErrorMessage(err, '내 정보를 불러오지 못했습니다.'))
+      setStatus('보호 API 요청 실패')
+    }
+  }
+
+  const makeExpiredAccessToken = () => {
+    localStorage.setItem('accessToken', 'expired-access-token-for-demo')
+    setStatus('Access Token을 일부러 만료된 값으로 변경했습니다.')
+  }
 
   useEffect(() => {
-    const fetchMyInfo = async () => {
-      try {
-        const response = await fetch(`${API_URL}/v1/users/me`, {
-          headers: {
-            Authorization: `Bearer ${getAccessToken()}`,
-          },
-        })
-        const result: ApiResponse<UserInfo> = await response.json()
-
-        if (!response.ok) {
-          throw new Error(result.message)
-        }
-
-        setUser(result.data)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : '내 정보를 불러오지 못했습니다.')
-      }
+    const handleRefreshSuccess = () => {
+      setRefreshCount((count) => count + 1)
+      setStatus('401 발생 -> refresh token으로 재발급 -> 원 요청 재시도 성공')
     }
 
+    const handleRefreshFail = () => {
+      setStatus('refresh token 재발급 실패: 다시 로그인해야 합니다.')
+    }
+
+    window.addEventListener('token-refresh-success', handleRefreshSuccess)
+    window.addEventListener('token-refresh-fail', handleRefreshFail)
     fetchMyInfo()
+
+    return () => {
+      window.removeEventListener('token-refresh-success', handleRefreshSuccess)
+      window.removeEventListener('token-refresh-fail', handleRefreshFail)
+    }
   }, [])
 
   return (
     <section className="panel compact">
       <p className="eyebrow">Protected Page</p>
       <h1>내 정보</h1>
-      <p className="muted">Swagger에서 자물쇠가 걸린 GET /v1/users/me API를 호출합니다.</p>
+      <p className="muted">
+        GET /v1/users/me 요청이 401이면 refresh token으로 access token을 갱신한 뒤
+        자동으로 재시도합니다.
+      </p>
+
+      <div className="mission-box">
+        <strong>미션 2 동작 확인</strong>
+        <p>{status}</p>
+        <p>토큰 재발급 성공 횟수: {refreshCount}</p>
+        <div className="mission-actions">
+          <button type="button" onClick={makeExpiredAccessToken}>
+            Access Token 만료 상황 만들기
+          </button>
+          <button type="button" onClick={fetchMyInfo}>
+            보호 API 다시 요청
+          </button>
+        </div>
+      </div>
 
       {error && <p className="error">{error}</p>}
       {!user && !error && <p>내 정보를 불러오는 중...</p>}

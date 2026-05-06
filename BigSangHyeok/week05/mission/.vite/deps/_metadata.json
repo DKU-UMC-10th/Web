@@ -1,0 +1,48 @@
+{
+  "hash": "8aa5d433",
+  "configHash": "87a46e1f",
+  "lockfileHash": "0a44b376",
+  "browserHash": "fae06109",
+  "optimized": {
+    "axios": {
+      "src": "../../node_modules/.pnpm/axios@1.15.2/node_modules/axios/index.js",
+      "file": "axios.js",
+      "fileHash": "f97867ee",
+      "needsInterop": false
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/.pnpm/react-dom@19.2.5_react@19.2.5/node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "c8ac27d7",
+      "needsInterop": true
+    },
+    "react-router-dom": {
+      "src": "../../node_modules/.pnpm/react-router-dom@6.30.1_rea_c364a591cbfb5947588fc8991df79dd9/node_modules/react-router-dom/dist/index.js",
+      "file": "react-router-dom.js",
+      "fileHash": "ebef7edc",
+      "needsInterop": false
+    },
+    "react": {
+      "src": "../../node_modules/.pnpm/react@19.2.5/node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "f3203146",
+      "needsInterop": true
+    },
+    "react/jsx-dev-runtime": {
+      "src": "../../node_modules/.pnpm/react@19.2.5/node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "1515bfe7",
+      "needsInterop": true
+    }
+  },
+  "chunks": {
+    "chunk-CYJPkc-J": {
+      "file": "chunk-CYJPkc-J.js",
+      "isDynamicEntry": false
+    },
+    "react-dom-CQmYTHKF": {
+      "file": "react-dom-CQmYTHKF.js",
+      "isDynamicEntry": false
+    }
+  }
+}
