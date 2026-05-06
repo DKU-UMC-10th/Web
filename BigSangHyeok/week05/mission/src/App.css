@@ -1,0 +1,174 @@
+.app {
+  min-height: 100vh;
+  background: #f6f7fb;
+  color: #202431;
+}
+
+.nav {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  background: #ffffff;
+  border-bottom: 1px solid #e3e6ee;
+}
+
+.brand {
+  color: #1e4fd8;
+  font-size: 20px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-links a,
+.nav-links button,
+.primary-link,
+.form button {
+  border: 0;
+  border-radius: 6px;
+  background: #1e4fd8;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  padding: 10px 14px;
+  text-decoration: none;
+}
+
+.nav-links a {
+  background: #edf2ff;
+  color: #1e4fd8;
+}
+
+.nav-links button {
+  background: #202431;
+}
+
+.page {
+  width: min(900px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 56px 0;
+}
+
+.panel {
+  background: #ffffff;
+  border: 1px solid #e3e6ee;
+  border-radius: 8px;
+  padding: 40px;
+  box-shadow: 0 12px 30px rgba(24, 35, 66, 0.08);
+}
+
+.compact {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.eyebrow {
+  color: #1e4fd8;
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 12px;
+  text-transform: uppercase;
+}
+
+.panel h1 {
+  color: #111827;
+  font-size: 34px;
+  line-height: 1.2;
+  margin: 0 0 16px;
+}
+
+.panel p {
+  color: #5b6475;
+  line-height: 1.7;
+  margin: 0 0 24px;
+}
+
+.panel .muted {
+  font-size: 15px;
+}
+
+.primary-link {
+  display: inline-flex;
+}
+
+.form {
+  display: grid;
+  gap: 16px;
+}
+
+.form label {
+  display: grid;
+  gap: 8px;
+  color: #343b4d;
+  font-weight: 700;
+  text-align: left;
+}
+
+.form input {
+  border: 1px solid #ccd2df;
+  border-radius: 6px;
+  box-sizing: border-box;
+  font: inherit;
+  padding: 12px 14px;
+  width: 100%;
+}
+
+.form button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.error {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 6px;
+  color: #be123c !important;
+  margin: 0 !important;
+  padding: 10px 12px;
+}
+
+.profile {
+  display: grid;
+  gap: 12px;
+  margin: 24px 0 0;
+  text-align: left;
+}
+
+.profile div {
+  border: 1px solid #e3e6ee;
+  border-radius: 6px;
+  padding: 14px;
+}
+
+.profile dt {
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.profile dd {
+  color: #111827;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .nav {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+    height: auto;
+    padding: 16px;
+  }
+
+  .panel {
+    padding: 28px 20px;
+  }
+}
