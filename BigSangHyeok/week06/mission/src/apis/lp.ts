@@ -1,5 +1,5 @@
 import type { PaginationDto } from "../types/common";
-import type { ResponseLpDetailDto, ResponseLpListDto } from "../types/lp";
+import type { ResponseLpCommentListDto, ResponseLpDetailDto, ResponseLpListDto } from "../types/lp";
 import { axiosInstance } from "./axios";
 
 export const getLpList = async (paginationDto:PaginationDto)
@@ -13,6 +13,14 @@ export const getLpList = async (paginationDto:PaginationDto)
 
 export const getLpDetail = async (lpid: string): Promise<ResponseLpDetailDto> => {
     const { data } = await axiosInstance.get(`/v1/lps/${lpid}`);
+
+    return data;
+};
+
+export const getLpComments = async (lpid: string, paginationDto: PaginationDto): Promise<ResponseLpCommentListDto> => {
+    const { data } = await axiosInstance.get(`/v1/lps/${lpid}/comments`, {
+        params: paginationDto,
+    });
 
     return data;
 };

@@ -1,22 +1,21 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { getLpList } from "../../apis/lp";
-import type { PaginationDto } from "../../types/common";
+import { getLpComments } from "../../apis/lp";
 
-function useGetLpList({ search, order, limit = 20 }: PaginationDto) {
+const useGetLpComments = (lpid: string | undefined, order: "asc" | "desc") => {
     return useInfiniteQuery({
-        queryKey: ["lps", order],
+        queryKey: ["lpComments", lpid, order],
         queryFn: ({ pageParam }) =>
-            getLpList({
+            getLpComments(lpid ?? "", {
                 cursor: pageParam,
-                search,
+                limit: 10,
                 order,
-                limit,
             }),
+        enabled: Boolean(lpid),
         initialPageParam: 0,
         getNextPageParam: (lastPage) => (lastPage.data.hasNext ? lastPage.data.nextCursor : undefined),
         staleTime: 1000 * 30,
         gcTime: 1000 * 60 * 5,
     });
-}
+};
 
-export default useGetLpList;
+export default useGetLpComments;
