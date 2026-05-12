@@ -33,6 +33,16 @@ export type Lp = {
     author?: LpAuthor;
 };
 
+export type LpComment = {
+    id: number;
+    content: string;
+    lpId: number;
+    authorId: number;
+    createdAt: string;
+    updatedAt: string;
+    author: LpAuthor;
+};
+
 export type ResponseLpListDto = CommonResponse<{
     data: Lp[];
     nextCursor: number;
@@ -40,3 +50,9 @@ export type ResponseLpListDto = CommonResponse<{
 }>;
 
 export type ResponseLpDetailDto = CommonResponse<Lp>;
+
+export type ResponseLpCommentListDto = CommonResponse<{
+    data: LpComment[];
+    nextCursor: number;
+    hasNext: boolean;
+}>;

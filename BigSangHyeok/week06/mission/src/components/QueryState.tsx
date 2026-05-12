@@ -3,29 +3,52 @@ type QueryStateProps = {
     onRetry?: () => void;
 };
 
-export const LoadingGrid = () => {
+const LpCardSkeleton = () => {
     return (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {Array.from({ length: 15 }).map((_, index) => (
-                <div
-                    key={index}
-                    className="aspect-square animate-pulse bg-[#191b22]"
-                    aria-label="LP 목록을 불러오는 중"
-                />
+        <div
+            className="skeleton-shimmer aspect-square animate-pulse overflow-hidden bg-[#9aa4af]"
+            aria-label="LP 카드 로딩 중"
+        />
+    );
+};
+
+export const LpCardSkeletonGrid = ({ count = 10 }: { count?: number }) => {
+    return (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5" aria-busy="true">
+            {Array.from({ length: count }).map((_, index) => (
+                <LpCardSkeleton key={index} />
             ))}
         </div>
     );
 };
 
-export const LoadingPanel = () => {
+export const LpDetailSkeleton = () => {
     return (
-        <div className="mx-auto w-full max-w-4xl rounded-md bg-[#282932] p-6">
-            <div className="h-8 w-40 animate-pulse rounded bg-[#3a3c47]" />
-            <div className="mx-auto mt-8 aspect-square w-full max-w-xl animate-pulse rounded bg-[#3a3c47]" />
+        <div className="mx-auto w-full max-w-4xl rounded-md bg-[#282932] p-6" aria-busy="true">
+            <div className="skeleton-shimmer h-8 w-40 animate-pulse rounded bg-[#9aa4af]" />
+            <div className="skeleton-shimmer mx-auto mt-8 aspect-square w-full max-w-xl animate-pulse rounded bg-[#9aa4af]" />
             <div className="mt-8 space-y-3">
-                <div className="h-4 animate-pulse rounded bg-[#3a3c47]" />
-                <div className="h-4 w-3/4 animate-pulse rounded bg-[#3a3c47]" />
+                <div className="skeleton-shimmer h-4 animate-pulse rounded bg-[#9aa4af]" />
+                <div className="skeleton-shimmer h-4 w-3/4 animate-pulse rounded bg-[#9aa4af]" />
             </div>
+        </div>
+    );
+};
+
+export const LoadingPanel = LpDetailSkeleton;
+
+export const CommentSkeletonList = ({ count = 8 }: { count?: number }) => {
+    return (
+        <div className="space-y-7" aria-busy="true">
+            {Array.from({ length: count }).map((_, index) => (
+                <div key={index} className="flex animate-pulse gap-4">
+                    <div className="skeleton-shimmer h-10 w-10 shrink-0 rounded-full bg-[#9aa4af]" />
+                    <div className="flex-1 space-y-3 pt-1">
+                        <div className="skeleton-shimmer h-5 w-40 rounded bg-[#9aa4af]" />
+                        <div className="skeleton-shimmer h-6 w-full max-w-3xl rounded bg-[#9aa4af]" />
+                    </div>
+                </div>
+            ))}
         </div>
     );
 };

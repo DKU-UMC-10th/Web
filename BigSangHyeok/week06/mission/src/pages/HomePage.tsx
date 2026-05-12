@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ErrorState, LoadingGrid } from "../components/QueryState";
+import { ErrorState, LpCardSkeletonGrid } from "../components/QueryState";
 import useGetLpList from "../hooks/queries/useGetLpList";
 import type { Lp } from "../types/lp";
 
@@ -23,8 +23,40 @@ const formatDate = (value: string) => {
 
 const HomePage = () => {
     const [sort, setSort] = useState<"asc" | "desc">("desc");
-    const { data, isLoading, isError, refetch } = useGetLpList({ order: sort, limit: 30 });
-    const lps: Lp[] = data?.data?.data ?? [];
+    const loadMoreRef = useRef<HTMLDivElement | null>(null);
+    const {
+        data,
+        isLoading,
+        isError,
+        refetch,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+    } = useGetLpList({ order: sort, limit: 20 });
+    const lps: Lp[] = data?.pages.flatMap((page) => page.data.data) ?? [];
+    const showInitialSkeleton = isLoading;
+    const showBottomSkeleton = isFetchingNextPage && !isLoading;
+
+    useEffect(() => {
+        const target = loadMoreRef.current;
+
+        if (!target) {
+            return;
+        }
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
+                    void fetchNextPage();
+                }
+            },
+            { rootMargin: "320px" },
+        );
+
+        observer.observe(target);
+
+        return () => observer.disconnect();
+    }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
     return (
         <section className="min-h-[calc(100dvh-5rem)] border-t border-[#1f2a3d] bg-black px-4 py-10 sm:px-8">
@@ -48,27 +80,36 @@ const HomePage = () => {
                     </div>
                 </div>
 
-                {isLoading && <LoadingGrid />}
+                {showInitialSkeleton && <LpCardSkeletonGrid count={20} />}
                 {isError && <ErrorState message="LP 목록을 불러오지 못했습니다." onRetry={() => void refetch()} />}
                 {!isLoading && !isError && (
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                        {lps.map((lp) => (
-                            <Link key={lp.id} to={`/lp/${lp.id}`} className="group relative aspect-square overflow-hidden bg-[#151515]">
-                                <img
-                                    src={lp.thumbnail}
-                                    alt={lp.title}
-                                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
-                                />
-                                <div className="absolute inset-0 flex flex-col justify-end bg-black/65 p-5 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                                    <strong className="line-clamp-2 text-2xl font-bold text-white">{lp.title}</strong>
-                                    <div className="mt-2 flex items-center justify-between text-lg font-semibold text-white">
-                                        <span>{formatDate(lp.createdAt)}</span>
-                                        <span>♥ {lp.likes.length}</span>
+                    <>
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                            {lps.map((lp) => (
+                                <Link key={lp.id} to={`/lp/${lp.id}`} className="group relative aspect-square overflow-hidden bg-[#151515]">
+                                    <img
+                                        src={lp.thumbnail}
+                                        alt={lp.title}
+                                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                    />
+                                    <div className="absolute inset-0 flex flex-col justify-end bg-black/65 p-5 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                                        <strong className="line-clamp-2 text-2xl font-bold text-white">{lp.title}</strong>
+                                        <div className="mt-2 flex items-center justify-between text-lg font-semibold text-white">
+                                            <span>{formatDate(lp.createdAt)}</span>
+                                            <span>♥ {lp.likes.length}</span>
+                                        </div>
                                     </div>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
+                                </Link>
+                            ))}
+                        </div>
+
+                        {showBottomSkeleton && (
+                            <div className="mt-2">
+                                <LpCardSkeletonGrid count={10} />
+                            </div>
+                        )}
+                        <div ref={loadMoreRef} className="h-10" />
+                    </>
                 )}
             </div>
         </section>
