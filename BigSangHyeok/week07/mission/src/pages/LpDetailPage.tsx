@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { getMyInfo } from "../apis/auth";
 import { deleteComment, deleteLp, likeLp, patchComment, patchLp, postComment, unlikeLp, uploadImage } from "../apis/lp";
 import { CommentSkeletonList, ErrorState, LpDetailSkeleton } from "../components/QueryState";
 import useGetLpComments from "../hooks/queries/useGetLpComments";
 import useGetLpDetail from "../hooks/queries/useGetLpDetail";
-import type { Lp, LpComment } from "../types/lp";
+import type { Likes, Lp, LpComment, ResponseLpDetailDto, ResponseLpListDto } from "../types/lp";
 
 const EditIcon = () => (
     <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
@@ -65,6 +65,23 @@ const formatRelativeDate = (value: string) => {
     }
 
     return `${Math.floor(hours / 24)} days ago`;
+};
+
+const getOptimisticLike = (lpId: number, userId: number): Likes => ({
+    id: -Date.now(),
+    lpId,
+    userId,
+});
+
+const toggleLpLike = (targetLp: Lp, userId: number) => {
+    const alreadyLiked = targetLp.likes.some((like) => like.userId === userId);
+
+    return {
+        ...targetLp,
+        likes: alreadyLiked
+            ? targetLp.likes.filter((like) => like.userId !== userId)
+            : [...targetLp.likes, getOptimisticLike(targetLp.id, userId)],
+    };
 };
 
 const LpDetailPage = () => {
@@ -188,7 +205,58 @@ const LpDetailPage = () => {
 
     const likeMutation = useMutation({
         mutationFn: () => (isLiked ? unlikeLp(lpid ?? "") : likeLp(lpid ?? "")),
-        onSuccess: async () => {
+        onMutate: async () => {
+            if (!lpid || !lp || !myInfo?.data?.id) {
+                return;
+            }
+
+            const userId = myInfo.data.id;
+
+            await queryClient.cancelQueries({ queryKey: ["lp", lpid] });
+            await queryClient.cancelQueries({ queryKey: ["lps"] });
+
+            const previousLpDetail = queryClient.getQueryData<ResponseLpDetailDto>(["lp", lpid]);
+            const previousLpListQueries = queryClient.getQueriesData<InfiniteData<ResponseLpListDto>>({
+                queryKey: ["lps"],
+            });
+
+            queryClient.setQueryData<ResponseLpDetailDto>(["lp", lpid], (oldData) => {
+                if (!oldData?.data) {
+                    return oldData;
+                }
+
+                return {
+                    ...oldData,
+                    data: toggleLpLike(oldData.data, userId),
+                };
+            });
+
+            queryClient.setQueriesData<InfiniteData<ResponseLpListDto>>({ queryKey: ["lps"] }, (oldData) => {
+                if (!oldData) {
+                    return oldData;
+                }
+
+                return {
+                    ...oldData,
+                    pages: oldData.pages.map((page) => ({
+                        ...page,
+                        data: {
+                            ...page.data,
+                            data: page.data.data.map((pageLp) => (pageLp.id === lp.id ? toggleLpLike(pageLp, userId) : pageLp)),
+                        },
+                    })),
+                };
+            });
+
+            return { previousLpDetail, previousLpListQueries };
+        },
+        onError: (_error, _variables, context) => {
+            queryClient.setQueryData(["lp", lpid], context?.previousLpDetail);
+            context?.previousLpListQueries.forEach(([queryKey, previousData]) => {
+                queryClient.setQueryData(queryKey, previousData);
+            });
+        },
+        onSettled: async () => {
             await queryClient.invalidateQueries({ queryKey: ["lp", lpid] });
             await queryClient.invalidateQueries({ queryKey: ["lps"] });
         },
