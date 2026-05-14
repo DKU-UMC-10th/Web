@@ -1,4 +1,4 @@
-import axios, { type AxiosInstance, type AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import axios, { type AxiosInstance, type AxiosError, type AxiosRequestHeaders, type InternalAxiosRequestConfig } from 'axios';
 
 // 1. axios 인스턴스 생성
 const api: AxiosInstance = axios.create({
@@ -11,7 +11,7 @@ const api: AxiosInstance = axios.create({
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem('accessToken');
     if (token) {
-        if (!config.headers) config.headers = {};
+        if (!config.headers) config.headers = {} as AxiosRequestHeaders;
         config.headers['Authorization'] = `Bearer ${token}`;
     }
     return config;

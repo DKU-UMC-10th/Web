@@ -1,16 +1,46 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { getLpList } from '../api/lpApi';
+import SkeletonCard from '../components/SkeletonCard';
 
 const LpListPage = () => {
   const [order, setOrder] = useState('desc');
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
+  const loadMoreRef = useRef(null);
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
+  const getNextCursor = (payload) => {
+    if (!payload) return undefined;
+
+    return (
+      payload.nextCursor ??
+      payload.cursor ??
+      payload.data?.nextCursor ??
+      payload.data?.cursor ??
+      payload.data?.pagination?.nextCursor ??
+      payload.data?.pagination?.cursor ??
+      payload.result?.nextCursor ??
+      payload.result?.cursor ??
+      payload.result?.pagination?.nextCursor ??
+      payload.result?.pagination?.cursor ??
+      undefined
+    );
+  };
+
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ['lps', order, search],
-    queryFn: () => getLpList({ order, search }),
+    queryFn: ({ pageParam }) => getLpList({ order, search, cursor: pageParam, limit: 12 }),
+    getNextPageParam: (lastPage) => getNextCursor(lastPage),
     staleTime: 1000 * 60 * 5,
     cacheTime: 1000 * 60 * 10,
   });
@@ -31,7 +61,8 @@ const LpListPage = () => {
   };
 
   const lpList = useMemo(() => {
-    const raw = getLpArray(data);
+    const pages = data?.pages ?? [];
+    const raw = pages.flatMap(getLpArray);
 
     return raw.map((item) => ({
       id: item.id,
@@ -42,13 +73,27 @@ const LpListPage = () => {
     }));
   }, [data]);
 
+  useEffect(() => {
+    if (!loadMoreRef.current || !hasNextPage) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#050505] text-white p-6">
         <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto">
-          {[...Array(12)].map((_, i) => (
-            <div key={i} className="h-72 rounded-[2rem] bg-zinc-900 animate-pulse" />
-          ))}
+          <SkeletonCard count={12} />
         </div>
       </div>
     );
@@ -112,35 +157,45 @@ const LpListPage = () => {
             검색 결과가 없습니다. 검색어를 변경해 보세요.
           </div>
         ) : (
-          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-            {lpList.map((lp) => (
-              <div
-                key={lp.id}
-                className="group cursor-pointer overflow-hidden rounded-[2rem] border border-zinc-800 bg-zinc-950 shadow-[0_30px_120px_-90px_rgba(255,255,255,0.35)] transition-transform duration-300 hover:-translate-y-1 hover:border-pink-600"
-                onClick={() => navigate(`/lp/${lp.id}`)}
-              >
-                <div className="relative aspect-square overflow-hidden bg-zinc-900">
-                  <img
-                    src={lp.thumbnail}
-                    alt={lp.title}
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    onError={(e) => {
-                      const target = e.currentTarget;
-                      target.onerror = null;
-                      target.src = 'https://placehold.co/400x400/1f2937/ffffff?text=NO+IMAGE';
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300" />
-                  <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
-                  <div className="absolute inset-x-4 bottom-4 text-white">
-                    <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">좋아요 {lp.likes}</p>
-                    <h2 className="mt-2 text-xl font-semibold leading-tight line-clamp-2">{lp.title}</h2>
-                    <p className="mt-1 text-xs text-zinc-400">{new Date(lp.createdAt).toLocaleDateString()}</p>
+          <>
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              {lpList.map((lp) => (
+                <div
+                  key={lp.id}
+                  className="group cursor-pointer overflow-hidden rounded-[2rem] border border-zinc-800 bg-zinc-950 shadow-[0_30px_120px_-90px_rgba(255,255,255,0.35)] transition-transform duration-300 hover:-translate-y-1 hover:border-pink-600"
+                  onClick={() => navigate(`/lp/${lp.id}`)}
+                >
+                  <div className="relative aspect-square overflow-hidden bg-zinc-900">
+                    <img
+                      src={lp.thumbnail}
+                      alt={lp.title}
+                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        target.onerror = null;
+                        target.src = 'https://placehold.co/400x400/1f2937/ffffff?text=NO+IMAGE';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300" />
+                    <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+                    <div className="absolute inset-x-4 bottom-4 text-white">
+                      <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">좋아요 {lp.likes}</p>
+                      <h2 className="mt-2 text-xl font-semibold leading-tight line-clamp-2">{lp.title}</h2>
+                      <p className="mt-1 text-xs text-zinc-400">{new Date(lp.createdAt).toLocaleDateString()}</p>
+                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+
+            {isFetchingNextPage && (
+              <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                <SkeletonCard count={4} />
               </div>
-            ))}
-          </div>
+            )}
+
+            <div ref={loadMoreRef} className="h-6" />
+          </>
         )}
       </div>
     </div>
