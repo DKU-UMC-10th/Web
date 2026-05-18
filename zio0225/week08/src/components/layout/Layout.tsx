@@ -2,18 +2,19 @@ import { useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query'; 
 import { useAuth } from '../../context/AuthContext'; 
+import { useSidebar } from '../../hooks/useSidebar'; 
 import ConfirmModal from '../common/ConfirmModal'; 
+import Sidebar from '../Sidebar'; 
 import api from '../../api/axios'; 
 
 const Layout = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  // 미션3 커스텀 훅 연동
+  const { isOpen: isSidebarOpen, toggle: toggleSidebar, close: closeSidebar } = useSidebar();
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false); 
   const { user, logout } = useAuth(); 
   const navigate = useNavigate();
 
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-
-  // 1. 회원 탈퇴 Mutation (주소: /v1/users)
+  // 회원 탈퇴 Mutation
   const withdrawMutation = useMutation({
     mutationFn: () => api.delete('/v1/users'),
     onSuccess: () => {
@@ -29,11 +30,20 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
+      
+      {/* 🛠️ 미션3: 직접 만든 커스텀 사이드바 컴포넌트 장착 */}
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        onClose={closeSidebar} 
+        onWithdraw={() => setIsWithdrawModalOpen(true)} 
+      />
+
       {/* --- 헤더 영역 (고정) --- */}
       <header className="w-full flex justify-between items-center p-4 border-b border-zinc-900 bg-black sticky top-0 z-[60]">
         <div className="flex items-center gap-4">
+          {/* 🛠️ 이제 화면 크기와 상관없이 항상 노출되는 ☰ 버튼 */}
           <button 
-            className="lg:hidden text-zinc-400 hover:text-white transition-colors" 
+            className="text-zinc-400 hover:text-white transition-colors p-1" 
             onClick={toggleSidebar}
           >
             <svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -70,60 +80,19 @@ const Layout = () => {
         </div>
       </header>
 
-      {/* --- 바디 영역 (사이드바 + 메인) --- */}
+      {/* --- 바디 영역 --- */}
       <div className="flex flex-1">
-        {/* --- 사이드바 영역 --- */}
-        <aside className={`
-          fixed lg:static top-0 left-0 h-[calc(100vh-65px)] w-64 bg-zinc-900 
-          transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
-          lg:translate-x-0 transition-transform duration-300 ease-in-out z-50 
-          flex flex-col justify-between border-r border-zinc-800
-        `}>
-          {/* 상단 메뉴 */}
-          <nav className="p-6 flex-1 overflow-y-auto">
-            <ul className="space-y-2">
-              <li 
-                className="text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xl cursor-pointer transition-all px-4 py-3 flex items-center gap-3" 
-                onClick={() => { navigate('/lps'); setIsSidebarOpen(false); }}
-              >
-                <span>💿</span> LP 목록
-              </li>
+        {/* ❌ 기존에 박혀있던 고정형 <aside> 태그 영역을 통째로 걷어냈습니다.
+          이 자리에 메뉴바가 항상 상주해있었기 때문에 토글 애니메이션이 티가 안 났던 것입니다.
+        */}
 
-              {/* 🚨 8주차 필수 추가: 사이드바 중간에 들어가는 마법의 검색 버튼! 🥊 */}
-              <li 
-                className="text-pink-400 hover:text-pink-300 hover:bg-zinc-800 rounded-xl cursor-pointer transition-all px-4 py-3 flex items-center gap-3 font-semibold" 
-                onClick={() => { navigate('/search'); setIsSidebarOpen(false); }}
-              >
-                <span>🔍</span> LP 검색
-              </li>
-
-              <li 
-                className="text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xl cursor-pointer transition-all px-4 py-3 flex items-center gap-3" 
-                onClick={() => { navigate('/mypage'); setIsSidebarOpen(false); }}
-              >
-                <span>👤</span> 마이페이지
-              </li>
-            </ul>
-          </nav>
-
-          {/* 하단 탈퇴 버튼 (무조건 바닥 고정) */}
-          <div className="p-6 border-t border-zinc-800 bg-zinc-900">
-            <button 
-              onClick={() => setIsWithdrawModalOpen(true)}
-              className="w-full text-left px-4 py-2 text-sm text-zinc-500 hover:text-red-500 transition-colors font-medium"
-            >
-              🏃 회원 탈퇴하기
-            </button>
-          </div>
-        </aside>
-
-        {/* --- 메인 콘텐츠 영역 --- */}
+        {/* --- 메인 콘텐츠 영역 (본문이 전체 화면을 넓게 사용) --- */}
         <main className="flex-1 p-6 overflow-y-auto bg-black">
           <Outlet />
         </main>
       </div>
 
-      {/* --- 우측 하단 플로팅 버튼 --- */}
+      {/* --- 플로팅 버튼 --- */}
       <button 
         className="fixed bottom-6 right-6 w-14 h-14 bg-pink-600 text-white rounded-full shadow-lg hover:bg-pink-700 transition-transform hover:scale-110 flex items-center justify-center text-2xl font-bold z-40"
         onClick={() => navigate('/lp/new')}
@@ -140,14 +109,6 @@ const Layout = () => {
         onClose={() => setIsWithdrawModalOpen(false)}
         onConfirm={() => withdrawMutation.mutate()}
       />
-
-      {/* 모바일 사이드바 배경 클릭 시 닫기 */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden" 
-          onClick={toggleSidebar}
-        ></div>
-      )}
     </div>
   );
 };
