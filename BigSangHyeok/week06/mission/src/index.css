@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+body.sidebar-open .sidebar {
+    transform: translateX(0);
+}
+
+body.sidebar-open .sidebar-backdrop {
+    display: block;
+}
+
+.skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+}
+
+.skeleton-shimmer::after {
+    animation: skeleton-shimmer 1.25s ease-in-out infinite;
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.24), transparent);
+    content: "";
+    inset: 0;
+    position: absolute;
+    transform: translateX(-100%);
+}
+
+@keyframes skeleton-shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
