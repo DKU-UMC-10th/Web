@@ -34,6 +34,16 @@ const MyPage = () => {
                     return;
                 }
 
+                // 🥊 마스터 토큰일 때는 API 호출 없이 모의 데이터 사용
+                if (token === 'master-token') {
+                    setUserInfo({
+                        name: "마스터",
+                        email: "master@lp.com",
+                        nickname: "마스터"
+                    });
+                    return;
+                }
+
                 const response = await api.get('/v1/users/me', {
                     headers: {
                         Authorization: `Bearer ${token}`

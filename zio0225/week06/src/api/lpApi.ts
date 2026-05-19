@@ -1,0 +1,55 @@
+// 지오님의 실제 파일명인 axios.ts에서 불러오기! 🥊
+import api from './axios'; 
+
+export const getLpList = async (params: { cursor?: number; limit?: number; search?: string; order?: 'asc' | 'desc' } = {}) => {
+    const requestParams: Record<string, string | number> = {};
+
+    if (params.order) {
+        requestParams.order = params.order;
+    }
+    if (params.cursor != null) {
+        requestParams.cursor = params.cursor;
+    }
+    if (params.limit != null) {
+        requestParams.limit = params.limit;
+    }
+    if (params.search?.trim()) {
+        requestParams.search = params.search.trim();
+    }
+
+    const { data } = await api.get('/v1/lps', {
+        params: requestParams
+    });
+    return data;
+};
+
+export const getLpDetail = async (lpid: string) => {
+    const { data } = await api.get(`/v1/lps/${lpid}`);
+    return data;
+};
+
+export const createLp = async (lpData: { title: string; content?: string; thumbnail?: string }) => {
+    const { data } = await api.post('/v1/lps', lpData);
+    return data;
+};
+
+export const getLpsByUser = async (userId?: string) => {
+    const url = userId ? `/v1/lps/user/${userId}` : '/v1/lps/user';
+    const { data } = await api.get(url);
+    return data;
+};
+
+export const updateLp = async (lpId: string, lpData: { title?: string; content?: string; thumbnail?: string }) => {
+    const { data } = await api.patch(`/v1/lps/${lpId}`, lpData);
+    return data;
+};
+
+export const deleteLp = async (lpId: string) => {
+    const { data } = await api.delete(`/v1/lps/${lpId}`);
+    return data;
+};
+
+export const getLpsByTag = async (tagName: string) => {
+    const { data } = await api.get(`/v1/lps/tag/${tagName}`);
+    return data;
+};
