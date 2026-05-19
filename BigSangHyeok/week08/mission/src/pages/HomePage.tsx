@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ErrorState, LpCardSkeletonGrid } from "../components/QueryState";
+import useThrottle from "../hooks/useThrottle";
 import useGetLpList from "../hooks/queries/useGetLpList";
 import type { Lp } from "../types/lp";
 
@@ -23,6 +24,8 @@ const formatDate = (value: string) => {
 
 const HomePage = () => {
     const [sort, setSort] = useState<"asc" | "desc">("desc");
+    const [scrollY, setScrollY] = useState(0);
+    const throttledScrollY = useThrottle(scrollY, 500);
     const loadMoreRef = useRef<HTMLDivElement | null>(null);
     const {
         data,
@@ -57,6 +60,25 @@ const HomePage = () => {
 
         return () => observer.disconnect();
     }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setScrollY(window.scrollY);
+        };
+
+        window.addEventListener("scroll", handleScroll, { passive: true });
+
+        return () => {
+            window.removeEventListener("scroll", handleScroll);
+        };
+    }, []);
+
+    useEffect(() => {
+        console.log("throttled scroll event", {
+            scrollY: Math.round(throttledScrollY),
+            checkedAt: new Date().toLocaleTimeString(),
+        });
+    }, [throttledScrollY]);
 
     return (
         <section className="min-h-[calc(100dvh-5rem)] border-t border-[#1f2a3d] bg-black px-4 py-10 sm:px-8">
