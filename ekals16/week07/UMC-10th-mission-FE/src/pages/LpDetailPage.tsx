@@ -14,6 +14,7 @@ import type { PaginationOrder } from "../enums/common";
 import useGetCommentList from "../hooks/queries/useGetCommentList";
 import useGetLpDetail from "../hooks/queries/useGetLpDetail";
 import type { LpComment } from "../types/comment";
+import type { ResponseLpDetailDto } from "../types/lp";
 import formatUploadedAt from "../utils/formatUploadedAt";
 
 const LpDetailPage = () => {
@@ -92,12 +93,85 @@ const LpDetailPage = () => {
 
   const likeLpMutation = useMutation({
     mutationFn: likeLp,
-    onSuccess: invalidateLpDetail,
+    onMutate: async (nextLpId) => {
+      await queryClient.cancelQueries({ queryKey: [QUERY_KEY.lp, nextLpId] });
+      const previousLpDetail = queryClient.getQueryData<ResponseLpDetailDto>([
+        QUERY_KEY.lp,
+        nextLpId,
+      ]);
+
+      if (previousLpDetail && myId) {
+        queryClient.setQueryData<ResponseLpDetailDto>(
+          [QUERY_KEY.lp, nextLpId],
+          {
+            ...previousLpDetail,
+            data: {
+              ...previousLpDetail.data,
+              likes: previousLpDetail.data.likes.some(
+                (like) => like.userId === myId,
+              )
+                ? previousLpDetail.data.likes
+                : [
+                    ...previousLpDetail.data.likes,
+                    {
+                      id: Date.now(),
+                      userId: myId,
+                      lpId: Number(nextLpId),
+                    },
+                  ],
+            },
+          },
+        );
+      }
+
+      return { previousLpDetail };
+    },
+    onError: (_error, nextLpId, context) => {
+      if (context?.previousLpDetail) {
+        queryClient.setQueryData(
+          [QUERY_KEY.lp, nextLpId],
+          context.previousLpDetail,
+        );
+      }
+    },
+    onSettled: invalidateLpDetail,
   });
 
   const unlikeLpMutation = useMutation({
     mutationFn: unlikeLp,
-    onSuccess: invalidateLpDetail,
+    onMutate: async (nextLpId) => {
+      await queryClient.cancelQueries({ queryKey: [QUERY_KEY.lp, nextLpId] });
+      const previousLpDetail = queryClient.getQueryData<ResponseLpDetailDto>([
+        QUERY_KEY.lp,
+        nextLpId,
+      ]);
+
+      if (previousLpDetail && myId) {
+        queryClient.setQueryData<ResponseLpDetailDto>(
+          [QUERY_KEY.lp, nextLpId],
+          {
+            ...previousLpDetail,
+            data: {
+              ...previousLpDetail.data,
+              likes: previousLpDetail.data.likes.filter(
+                (like) => like.userId !== myId,
+              ),
+            },
+          },
+        );
+      }
+
+      return { previousLpDetail };
+    },
+    onError: (_error, nextLpId, context) => {
+      if (context?.previousLpDetail) {
+        queryClient.setQueryData(
+          [QUERY_KEY.lp, nextLpId],
+          context.previousLpDetail,
+        );
+      }
+    },
+    onSettled: invalidateLpDetail,
   });
 
   const createCommentMutation = useMutation({

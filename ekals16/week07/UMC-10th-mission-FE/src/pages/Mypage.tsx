@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getMyInfo, updateMyInfo } from "../apis/auth";
 import { AUTH_REDIRECT_PATH_KEY } from "../constants/authRedirect";
 import { useAuth } from "../context/useAuth";
+import type { RequestUpdateMyInfoDto, ResponseMyInfoDto } from "../types/auth";
 
 const MY_INFO_QUERY_KEY = ["me"];
 
@@ -26,8 +27,35 @@ const Mypage = () => {
 
   const updateMyInfoMutation = useMutation({
     mutationFn: updateMyInfo,
-    onSuccess: async () => {
+    onMutate: async (nextProfile: RequestUpdateMyInfoDto) => {
+      await queryClient.cancelQueries({ queryKey: MY_INFO_QUERY_KEY });
+
+      const previousMyInfo =
+        queryClient.getQueryData<ResponseMyInfoDto>(MY_INFO_QUERY_KEY);
+
+      if (previousMyInfo) {
+        queryClient.setQueryData<ResponseMyInfoDto>(MY_INFO_QUERY_KEY, {
+          ...previousMyInfo,
+          data: {
+            ...previousMyInfo.data,
+            name: nextProfile.name,
+            bio: nextProfile.bio ?? null,
+            avatar: nextProfile.avatar ?? null,
+          },
+        });
+      }
+
       setIsEditing(false);
+
+      return { previousMyInfo };
+    },
+    onError: (_error, _nextProfile, context) => {
+      if (context?.previousMyInfo) {
+        queryClient.setQueryData(MY_INFO_QUERY_KEY, context.previousMyInfo);
+      }
+      setIsEditing(true);
+    },
+    onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: MY_INFO_QUERY_KEY });
     },
   });
@@ -51,14 +79,14 @@ const Mypage = () => {
   }, [navigate]);
 
   useEffect(() => {
-    if (!data?.data) {
+    if (!data?.data || updateMyInfoMutation.isPending) {
       return;
     }
 
     setName(data.data.name);
     setBio(data.data.bio ?? "");
     setAvatar(data.data.avatar ?? "");
-  }, [data]);
+  }, [data, updateMyInfoMutation.isPending]);
 
   const handleChangeAvatar = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -201,7 +229,7 @@ const Mypage = () => {
               </p>
               {updateMyInfoMutation.isError && (
                 <p className="text-sm text-red-400">
-                  프로필 수정에 실패했습니다.
+                  프로필 수정에 실패했습니다. 이전 정보로 되돌렸습니다.
                 </p>
               )}
             </div>
