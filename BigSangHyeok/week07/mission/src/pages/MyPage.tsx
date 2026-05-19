@@ -2,8 +2,24 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getMyInfo, patchMyInfo } from "../apis/auth";
 import { ErrorState, LoadingPanel } from "../components/QueryState";
+import type { RequestUpdateUserDto, ResponseMyInfoDto } from "../types/auth";
 
 const DEFAULT_AVATAR = "https://ui-avatars.com/api/?name=ME&background=e5e7eb&color=888";
+
+const CheckIcon = () => (
+    <svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+);
+
+const GearIcon = () => (
+    <svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true">
+        <path
+            d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4zM19.4 15a8 8 0 0 0 .1-1l2-1.5-2-3.5-2.4 1a8.2 8.2 0 0 0-1.7-1L15 6.5h-4L10.6 9a8.2 8.2 0 0 0-1.7 1l-2.4-1-2 3.5 2 1.5a8 8 0 0 0 0 2l-2 1.5 2 3.5 2.4-1a8.2 8.2 0 0 0 1.7 1l.4 2.5h4l.4-2.5a8.2 8.2 0 0 0 1.7-1l2.4 1 2-3.5-2.1-1.5z"
+            fill="currentColor"
+        />
+    </svg>
+);
 
 const MyPage = () => {
     const queryClient = useQueryClient();
@@ -19,31 +35,62 @@ const MyPage = () => {
     });
 
     useEffect(() => {
-        if (!data?.data) {
+        if (!data?.data || isEditing) {
             return;
         }
 
         setName(data.data.name);
         setBio(data.data.bio ?? "");
         setAvatar(data.data.avatar ?? "");
-    }, [data]);
+    }, [data, isEditing]);
 
     const updateMutation = useMutation({
-        mutationFn: () =>
-            patchMyInfo({
-                name: name.trim(),
-                bio: bio.trim(),
-                avatar,
-            }),
-        onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ["my-info"] });
+        mutationFn: (body: RequestUpdateUserDto) => patchMyInfo(body),
+        onMutate: async (body) => {
+            await queryClient.cancelQueries({ queryKey: ["my-info"] });
+
+            const previousMyInfoQueries = queryClient.getQueriesData<ResponseMyInfoDto>({
+                queryKey: ["my-info"],
+            });
+
+            queryClient.setQueriesData<ResponseMyInfoDto>({ queryKey: ["my-info"] }, (oldData) => {
+                if (!oldData?.data) {
+                    return oldData;
+                }
+
+                return {
+                    ...oldData,
+                    data: {
+                        ...oldData.data,
+                        name: body.name ?? oldData.data.name,
+                        bio: body.bio ?? oldData.data.bio,
+                        avatar: body.avatar ?? oldData.data.avatar,
+                    },
+                };
+            });
+
             setIsEditing(false);
+
+            return { previousMyInfoQueries };
+        },
+        onError: (_error, _body, context) => {
+            context?.previousMyInfoQueries.forEach(([queryKey, previousData]) => {
+                queryClient.setQueryData(queryKey, previousData);
+            });
+            setIsEditing(true);
+        },
+        onSettled: async () => {
+            await queryClient.invalidateQueries({ queryKey: ["my-info"] });
         },
     });
 
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        updateMutation.mutate();
+        updateMutation.mutate({
+            name: name.trim(),
+            bio: bio.trim(),
+            avatar,
+        });
     };
 
     if (isLoading) {
@@ -63,46 +110,47 @@ const MyPage = () => {
     }
 
     return (
-        <section className="px-4 py-10">
-            <div className="mx-auto flex w-full max-w-3xl items-center gap-10 text-[#f2f3f8]">
-                <img src={avatar || DEFAULT_AVATAR} alt="" className="h-48 w-48 shrink-0 rounded-full bg-[#d8d8d8] object-cover" />
+        <section className="px-4 py-16">
+            <div className="mx-auto flex w-full max-w-[760px] items-center gap-7 text-white">
+                <img src={avatar || DEFAULT_AVATAR} alt="" className="h-44 w-44 shrink-0 rounded-full bg-[#d8d8d8] object-cover" />
 
                 {isEditing ? (
-                    <form onSubmit={handleSubmit} className="min-w-0 flex-1 space-y-4">
-                        <div className="flex items-center gap-6">
+                    <form onSubmit={handleSubmit} className="min-w-0 flex-1">
+                        <div className="flex items-center gap-5">
                             <input
+                                autoFocus
                                 value={name}
                                 onChange={(event) => setName(event.target.value)}
-                                className="h-14 min-w-0 flex-1 rounded-md border border-white bg-black px-4 text-3xl font-bold outline-none"
+                                className="h-14 w-[300px] rounded-md border border-white bg-black px-3 text-3xl font-bold leading-none text-white outline-none focus:border-[#3b82f6] focus:ring-2 focus:ring-[#3b82f6]"
                             />
                             <button
                                 type="submit"
                                 disabled={!name.trim() || updateMutation.isPending}
                                 aria-label="저장"
-                                className="shrink-0 text-5xl font-bold leading-none hover:text-[#ff2ea3] disabled:text-[#7c818f]"
+                                className="flex h-14 w-10 items-center justify-center text-white hover:text-[#ff2ea3] disabled:text-[#7c818f]"
                             >
-                                ✓
+                                <CheckIcon />
                             </button>
                         </div>
                         <input
                             value={bio}
                             onChange={(event) => setBio(event.target.value)}
                             placeholder="Bio"
-                            className="h-12 w-full rounded-md border border-white bg-black px-4 text-xl outline-none"
+                            className="mt-3 h-11 w-[340px] rounded-md border border-white bg-black px-3 text-xl text-white outline-none focus:border-[#3b82f6] focus:ring-2 focus:ring-[#3b82f6]"
                         />
-                        <p className="text-xl font-semibold">{data.data.email}</p>
-                        {updateMutation.isError && <p className="text-sm text-red-400">프로필 수정에 실패했습니다.</p>}
+                        <p className="mt-4 text-xl font-semibold">{data.data.email}</p>
+                        {updateMutation.isError && <p className="mt-2 text-sm text-red-400">프로필 수정에 실패해서 이전 정보로 되돌렸습니다.</p>}
                     </form>
                 ) : (
                     <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-8">
-                            <h1 className="text-5xl font-bold">{data.data.name}</h1>
-                            <button type="button" onClick={() => setIsEditing(true)} aria-label="프로필 수정" className="text-3xl text-[#a3a7b2] hover:text-white">
-                                ⚙
+                        <div className="flex items-center gap-24">
+                            <h1 className="text-5xl font-bold leading-tight">{data.data.name}</h1>
+                            <button type="button" onClick={() => setIsEditing(true)} aria-label="프로필 수정" className="text-white hover:text-[#ff2ea3]">
+                                <GearIcon />
                             </button>
                         </div>
-                        <p className="mt-4 text-2xl text-[#a3a7b2]">{data.data.bio || "소개가 없습니다."}</p>
-                        <p className="mt-4 text-2xl font-semibold">{data.data.email}</p>
+                        <p className="mt-2 text-2xl">{data.data.bio || "소개가 없습니다."}</p>
+                        <p className="mt-3 text-xl font-semibold">{data.data.email}</p>
                     </div>
                 )}
             </div>
