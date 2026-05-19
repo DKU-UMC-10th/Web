@@ -4,6 +4,7 @@ import { Link, Outlet, useNavigate } from "react-router-dom";
 import { deleteMyAccount, getMyInfo, postLogout } from "../apis/auth";
 import LpEditorModal from "../components/LpEditorModal";
 import { useAuth } from "../context/AuthContext";
+import { useSidebar } from "../hooks/useSidebar";
 
 const HomeLayout = () => {
     const navigate = useNavigate();
@@ -11,7 +12,10 @@ const HomeLayout = () => {
     const { accessToken, clearAuthTokens } = useAuth();
     const [isLpModalOpen, setIsLpModalOpen] = useState(false);
     const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+    const shouldOpenSidebarByDefault = window.matchMedia("(min-width: 1024px)").matches;
+    const { isOpen: isSidebarOpen, close: closeSidebar, toggle: toggleSidebar } = useSidebar(shouldOpenSidebarByDefault);
     const isLoggedIn = Boolean(accessToken);
+
     const { data: myInfo } = useQuery({
         queryKey: ["my-info", accessToken],
         queryFn: getMyInfo,
@@ -36,15 +40,19 @@ const HomeLayout = () => {
         onSuccess: finishAuthSession,
     });
 
-    const closeSidebar = () => document.body.classList.remove("sidebar-open");
-    const toggleSidebar = () => document.body.classList.toggle("sidebar-open");
-
     return (
         <div className="min-h-dvh bg-black text-white">
             <header className="fixed left-0 right-0 top-0 z-30 h-20 bg-[#111111]">
                 <div className="flex h-full items-center justify-between px-5">
                     <div className="flex items-center gap-5">
-                        <button type="button" aria-label="사이드바 열기" className="text-white lg:hidden" onClick={toggleSidebar}>
+                        <button
+                            type="button"
+                            aria-label="사이드바 열기"
+                            aria-controls="app-sidebar"
+                            aria-expanded={isSidebarOpen}
+                            className="text-white"
+                            onClick={toggleSidebar}
+                        >
                             <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
                                 <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M7.95 11.95h32m-32 12h32m-32 12h32" />
                             </svg>
@@ -83,10 +91,22 @@ const HomeLayout = () => {
                 tabIndex={0}
                 aria-label="사이드바 닫기"
                 onClick={closeSidebar}
-                onKeyDown={closeSidebar}
-                className="sidebar-backdrop fixed inset-0 z-40 hidden bg-black/60 lg:hidden"
+                onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                        closeSidebar();
+                    }
+                }}
+                className={`fixed inset-0 z-40 bg-black/60 transition-opacity duration-300 ease-in-out lg:hidden ${
+                    isSidebarOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+                }`}
             />
-            <aside className="sidebar fixed bottom-0 left-0 top-20 z-50 w-60 -translate-x-full bg-[#151515] transition-transform lg:translate-x-0">
+
+            <aside
+                id="app-sidebar"
+                className={`fixed bottom-0 left-0 top-20 z-50 w-60 bg-[#151515] transition-transform duration-300 ease-in-out ${
+                    isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+                }`}
+            >
                 <nav className="flex h-full flex-col justify-between p-8">
                     <div className="space-y-8 text-lg font-semibold">
                         <Link to="/search" onClick={closeSidebar} className="block hover:text-[#ff2ea3]">
@@ -97,14 +117,21 @@ const HomeLayout = () => {
                         </Link>
                     </div>
                     {isLoggedIn && (
-                        <button type="button" onClick={() => setIsWithdrawModalOpen(true)} className="text-left text-[#d8dbe4] hover:text-[#ff2ea3]">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                closeSidebar();
+                                setIsWithdrawModalOpen(true);
+                            }}
+                            className="text-left text-[#d8dbe4] hover:text-[#ff2ea3]"
+                        >
                             탈퇴하기
                         </button>
                     )}
                 </nav>
             </aside>
 
-            <main className="min-h-dvh pt-20 lg:pl-60">
+            <main className={`min-h-dvh pt-20 transition-[padding] duration-300 ease-in-out ${isSidebarOpen ? "lg:pl-60" : "lg:pl-0"}`}>
                 <Outlet />
             </main>
 
@@ -140,7 +167,7 @@ const HomeLayout = () => {
                                 예
                             </button>
                             <button type="button" onClick={() => setIsWithdrawModalOpen(false)} className="h-12 w-32 rounded-md bg-[#ff2ea3] font-semibold text-white">
-                                아니오
+                                아니요
                             </button>
                         </div>
                     </div>
