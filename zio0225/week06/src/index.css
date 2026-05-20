@@ -1,112 +1,258 @@
 @import "tailwindcss";
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+/* 1. 콘텐츠를 가로로 배치 (사이드바 + 메인) 🥊 */
+.content-wrapper {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  position: relative;
+}
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
+/* 2. 헤더 스타일: 지오님의 기존 변수 활용 ㅡㅡ */
+.header {
+  height: 80px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 40px;
+  border-bottom: 1px solid var(--border);
   background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
+.header h1 {
+  font-size: 24px;
+  margin: 0;
+  cursor: pointer;
+  color: var(--text-h);
+}
+
+/* 3. 사이드바: 반응형 애니메이션 포함 🍠 */
+.sidebar {
+  width: 260px;
+  background: var(--code-bg);
+  border-right: 1px solid var(--border);
+  padding: 24px;
+  text-align: left;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar nav li {
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text);
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.sidebar nav li:hover {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+/* 4. 메인 콘텐츠 영역 🥊 */
+.main-content {
+  flex: 1;
+  padding: 40px;
+  background: var(--bg);
+}
+
+/* 5. 플로팅 버튼: 지오님의 1126px 중앙 정렬 유지 ㅡㅡ */
+.floating-btn {
+  position: fixed;
+  bottom: 32px;
+  right: calc(50% - 563px + 32px); /* root 너비 절반에서 여백 계산 */
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  font-size: 32px;
+  border: none;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99;
+  transition: transform 0.2s;
+}
+
+.floating-btn:hover {
+  transform: scale(1.1);
+}
+
+/* 6. 반응형 및 모바일 오버레이 🍠 */
+@media (max-width: 1024px) {
+  .sidebar {
+    position: fixed;
+    top: 80px;
+    left: 0;
+    height: calc(100vh - 80px);
+    z-index: 1001;
+    transform: translateX(-100%); /* 기본 숨김 🥊 */
+  }
+
+  .sidebar.open {
+    transform: translateX(0); /* 열림 상태 */
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    top: 80px;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+    backdrop-filter: blur(2px);
+  }
+
+  .floating-btn {
+    right: 20px;
+  }
+
+  .burger-btn {
+    display: block;
+    background: none;
+    border: none;
+    color: var(--text-h);
+    cursor: pointer;
+    margin-right: 15px;
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+/* PC에서는 버거 버튼 숨김 ㅡㅡ */
+@media (min-width: 1025px) {
+  .burger-btn {
+    display: none;
   }
 }
-
-#root {
-  width: 1126px;
-  max-width: 100%;
+.lp-detail-container {
+  max-width: 1000px;
   margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
+  text-align: left;
+}
+
+.detail-layout {
+  display: flex;
+  gap: 40px;
+  margin-top: 20px;
+}
+
+.detail-image-section {
+  flex: 1;
+}
+
+.detail-image-section img {
+  width: 100%;
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+
+.detail-info-section {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  box-sizing: border-box;
+  justify-content: space-between;
 }
 
-body {
-  margin: 0;
+.info-header h2 {
+  font-size: 32px;
+  margin-bottom: 10px;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
+.info-header .date {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.info-body {
+  margin: 30px 0;
+  line-height: 1.6;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.action-buttons button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
   font-weight: 500;
-  color: var(--text-h);
+  transition: all 0.2s;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+.action-buttons .like-btn:hover { background: var(--accent-bg); color: var(--accent); }
+.action-buttons .delete-btn { color: #ff4757; }
+
+/* 모바일 대응 ㅡㅡ */
+@media (max-width: 768px) {
+  .detail-layout {
+    flex-direction: column;
   }
 }
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
+/* 스켈레톤 기본 베이스 🥊 */
+.skeleton-box {
+  width: 100%;
+  aspect-ratio: 1;
   background: var(--code-bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-text {
+  background: var(--code-bg);
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.skeleton-text.title {
+  width: 70%;
+  height: 20px;
+}
+
+.skeleton-text.date {
+  width: 40%;
+  height: 14px;
+}
+
+/* 반짝이는 애니메이션 효과 ㅡㅡ✨ */
+.skeleton-box::after,
+.skeleton-text::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.2) 20%,
+    rgba(255, 255, 255, 0.5) 60%,
+    rgba(255, 255, 255, 0)
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }
