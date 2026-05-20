@@ -1,5 +1,3 @@
-import type { CursorBasedResponse } from "./common";
-
 export type Tag = {
     id: number;
     name: string;
@@ -33,9 +31,16 @@ export type Lp = {
     };
 }
 
-export type ResponseLpListDto = CursorBasedResponse<{
-    data: Lp[];
-}>;
+export type ResponseLpListDto = {
+    status: boolean;
+    statusCode: number;
+    message: string;
+    data: {
+        data: Lp[];
+        nextCursor: number;
+        hasNext: boolean;
+    };
+};
 
 export type ResponseLpDetailDto = {
     status: boolean;

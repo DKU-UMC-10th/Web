@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -10,8 +10,12 @@ import { QUERY_KEY } from "../constants/key";
 import { PAGINATION_ORDER } from "../enums/common";
 import type { PaginationOrder } from "../enums/common";
 import useDebounce from "../hooks/useDebounce";
+import useThrottle from "../hooks/useThrottle";
 import useGetLpList from "../hooks/queries/useGetLpList";
 import formatUploadedAt from "../utils/formatUploadedAt";
+
+const SKELETON_CARD_COUNT = 5;
+const LP_PAGE_SIZE = 20;
 
 const HomePage = () => {
   const queryClient = useQueryClient();
@@ -24,6 +28,10 @@ const HomePage = () => {
   const [tag, setTag] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [lpImagePreview, setLpImagePreview] = useState("");
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const lastFetchedSignal = useRef(0);
+  const [loadMoreSignal, setLoadMoreSignal] = useState(0);
+  const throttledLoadMoreSignal = useThrottle(loadMoreSignal, 1000);
 
   const {
     data,
@@ -36,10 +44,54 @@ const HomePage = () => {
   } = useGetLpList({
     search: debouncedQuery || undefined,
     order,
-    limit: 20,
+    limit: LP_PAGE_SIZE,
+    enabled: true,
   });
 
   const lpList = data?.pages.flatMap((page) => page.data.data) ?? [];
+
+  useEffect(() => {
+    if (!hasNextPage || isFetchingNextPage) {
+      return;
+    }
+
+    if (
+      throttledLoadMoreSignal > 0 &&
+      throttledLoadMoreSignal !== lastFetchedSignal.current
+    ) {
+      lastFetchedSignal.current = throttledLoadMoreSignal;
+      void fetchNextPage();
+    }
+  }, [
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    throttledLoadMoreSignal,
+  ]);
+
+  useEffect(() => {
+    const loadMoreElement = loadMoreRef.current;
+
+    if (!loadMoreElement) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setLoadMoreSignal(Date.now());
+        }
+      },
+      { root: null, rootMargin: "200px" },
+    );
+
+    observer.observe(loadMoreElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [isPending]);
+
   const createLpMutation = useMutation({
     mutationFn: createLp,
     onSuccess: async () => {
@@ -197,20 +249,20 @@ const HomePage = () => {
             </div>
           </Link>
         ))}
+        {isFetchingNextPage &&
+          Array.from({ length: SKELETON_CARD_COUNT }).map((_, index) => (
+            <div
+              key={`lp-skeleton-${index}`}
+              className="overflow-hidden rounded bg-white/5 ring-1 ring-white/10"
+              aria-hidden="true"
+            >
+              <div className="aspect-square animate-pulse bg-white/10" />
+              <div className="sr-only">Loading LP</div>
+            </div>
+          ))}
       </div>
 
-      {hasNextPage && (
-        <div className="mt-8 flex justify-center">
-          <button
-            type="button"
-            onClick={() => fetchNextPage()}
-            disabled={isFetchingNextPage}
-            className="rounded bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:text-white/40"
-          >
-            {isFetchingNextPage ? "불러오는 중..." : "더 보기"}
-          </button>
-        </div>
-      )}
+      <div ref={loadMoreRef} className="h-10" aria-hidden="true" />
 
       <button
         type="button"
