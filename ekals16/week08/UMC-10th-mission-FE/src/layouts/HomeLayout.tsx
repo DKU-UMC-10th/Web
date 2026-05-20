@@ -1,14 +1,19 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 
 import { deleteMyInfo, getMyInfo } from "../apis/auth";
 import { useAuth } from "../context/useAuth";
+import useSidebar from "../hooks/useSidebar";
 
 const HomeLayout = () => {
   const navigate = useNavigate();
   const { accessToken, logout, clearAuth } = useAuth();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const {
+    isOpen: isSidebarOpen,
+    close: closeSidebar,
+    toggle: toggleSidebar,
+  } = useSidebar();
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const { data: myInfo } = useQuery({
     queryKey: ["me"],
@@ -35,15 +40,48 @@ const HomeLayout = () => {
     withdrawMutation.mutate();
   };
 
+  useEffect(() => {
+    if (!isSidebarOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeSidebar();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [closeSidebar, isSidebarOpen]);
+
+  useEffect(() => {
+    if (!isSidebarOpen) {
+      return;
+    }
+
+    const originalOverflow = document.body.style.overflow;
+
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isSidebarOpen]);
+
   return (
     <div className="min-h-screen bg-black text-white">
-      <nav className="flex h-16 items-center justify-between border-b border-white/10 px-6">
+      <nav className="relative z-[60] flex h-16 items-center justify-between border-b border-white/10 bg-black px-6">
         <div className="flex items-center gap-3">
           <button
             type="button"
-            className="inline-flex items-center justify-center rounded p-1 text-white/80 hover:bg-white/10 sm:hidden"
+            className="inline-flex items-center justify-center rounded p-1 text-white/80 transition-colors hover:bg-white/10"
             aria-label="사이드바 열기"
-            onClick={() => setIsSidebarOpen(true)}
+            aria-expanded={isSidebarOpen}
+            onClick={toggleSidebar}
           >
             <svg
               width="32"
@@ -98,33 +136,27 @@ const HomeLayout = () => {
       <div className="flex min-h-[calc(100vh-64px)]">
         <div
           className={
-            isSidebarOpen ? "fixed inset-0 z-40 bg-black/60 sm:hidden" : "hidden"
+            isSidebarOpen
+              ? "fixed inset-x-0 bottom-0 top-16 z-40 bg-black/60 opacity-100 transition-opacity duration-300"
+              : "pointer-events-none fixed inset-x-0 bottom-0 top-16 z-40 bg-black/60 opacity-0 transition-opacity duration-300"
           }
           role="button"
           tabIndex={0}
-          onClick={() => setIsSidebarOpen(false)}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              setIsSidebarOpen(false);
-            }
-          }}
+          onClick={closeSidebar}
         />
         <aside
           className={
             isSidebarOpen
-              ? "fixed inset-y-0 left-0 z-50 flex w-56 flex-col border-r border-white/10 bg-black px-3 py-6 sm:static sm:z-auto sm:w-56"
-              : "hidden w-20 shrink-0 flex-col border-r border-white/10 bg-black/70 px-3 py-6 sm:flex sm:w-56"
+              ? "fixed bottom-0 left-0 top-16 z-50 flex w-56 translate-x-0 flex-col border-r border-white/10 bg-black px-3 py-6 transition-transform duration-300 ease-in-out"
+              : "fixed bottom-0 left-0 top-16 z-50 flex w-56 -translate-x-full flex-col border-r border-white/10 bg-black px-3 py-6 transition-transform duration-300 ease-in-out"
           }
         >
-          <div className="flex items-center justify-between sm:hidden">
-            <div className="text-[10px] uppercase tracking-[0.2em] text-white/50">
-              Menu
-            </div>
+          <div className="flex justify-end">
             <button
               type="button"
               className="rounded p-1 text-white/70 hover:bg-white/10"
               aria-label="사이드바 닫기"
-              onClick={() => setIsSidebarOpen(false)}
+              onClick={closeSidebar}
             >
               X
             </button>
@@ -133,10 +165,18 @@ const HomeLayout = () => {
             Menu
           </div>
           <nav className="mt-4 flex flex-col gap-2 text-xs sm:text-sm">
-            <Link to="/" className="rounded px-2 py-2 hover:bg-white/10">
+            <Link
+              to="/"
+              onClick={closeSidebar}
+              className="rounded px-2 py-2 hover:bg-white/10"
+            >
               찾기
             </Link>
-            <Link to="/my" className="rounded px-2 py-2 hover:bg-white/10">
+            <Link
+              to="/my"
+              onClick={closeSidebar}
+              className="rounded px-2 py-2 hover:bg-white/10"
+            >
               마이페이지
             </Link>
           </nav>
