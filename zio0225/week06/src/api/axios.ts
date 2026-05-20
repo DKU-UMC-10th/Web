@@ -7,6 +7,16 @@ const api: AxiosInstance = axios.create({
     baseURL: '', 
 });
 
+// 1. 요청 인터셉터 설정: accessToken이 있으면 Authorization 헤더를 자동으로 추가합니다.
+api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+        if (!config.headers) config.headers = {};
+        config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    return config;
+});
+
 // 2. 응답 인터셉터 설정
 api.interceptors.response.use(
     (response) => response,

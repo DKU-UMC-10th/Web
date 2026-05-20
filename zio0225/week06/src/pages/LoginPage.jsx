@@ -1,12 +1,16 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google'; // 커스텀 버튼용 훅
 import useForm from '../hooks/useForm';
 import { validateLogin } from '../utils/validate';
 import api from '../api/axios'; 
+import { useAuth } from '../context/AuthContext';
 import './LoginPage.css';
 
 const LoginPage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const { login } = useAuth();
+    const fromPath = location.state?.from?.pathname || '/mypage';
 
     const { 
         values = { email: '', password: '' }, 
@@ -23,13 +27,25 @@ const LoginPage = () => {
             console.log("구글 로그인 성공!", codeResponse);
             // 여기서 백엔드에 토큰을 보내거나, 바로 마이페이지로 이동시킵니다.
             alert("구글 로그인에 성공했습니다! 🥳");
-            window.location.href = '/mypage';
+            setTimeout(() => navigate(fromPath, { replace: true }), 100);
         },
         onError: (error) => console.log('구글 로그인 실패:', error)
     });
 
     const handleLogin = async (e) => {
         e.preventDefault();
+
+        // 🥊 마스터 키 로그인: 개발용 간편 인증
+        if (values.email === 'master@lp.com' && values.password === 'master123') {
+            localStorage.setItem('accessToken', 'master-token');
+            localStorage.setItem('refreshToken', 'master-refresh-token');
+            const masterUser = { nickname: '마스터' };
+            login(masterUser);
+            alert("마스터 키로 로그인 성공! 🥳");
+            setTimeout(() => navigate(fromPath, { replace: true }), 100);
+            return;
+        }
+
         try {
             const response = await api.post('/v1/auth/signin', {
                 email: values.email,
@@ -42,8 +58,10 @@ const LoginPage = () => {
             if (accessToken && refreshToken) {
                 localStorage.setItem('accessToken', accessToken);
                 localStorage.setItem('refreshToken', refreshToken);
+                const userData = result.user || result.data || result || { nickname: result.nickname || '회원' };
+                login({ nickname: userData.nickname || userData.name || '회원' });
                 alert("로그인에 성공했습니다! 🥳");
-                window.location.href = '/mypage';
+                setTimeout(() => navigate(fromPath, { replace: true }), 100);
             } else {
                 throw new Error("토큰을 찾을 수 없습니다.");
             }
