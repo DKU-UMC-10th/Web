@@ -1,12 +1,8 @@
 import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import {
-  calculateTotals,
-  clearCart,
-  decrease,
-  increase,
-  removeItem,
-} from './features/cart/cartSlice'
+import Modal from './components/Modal'
+import { calculateTotals, decrease, increase, removeItem } from './features/cart/cartSlice'
+import { openModal } from './features/modal/modalSlice'
 import type { AppDispatch, RootState } from './store'
 
 function App() {
@@ -21,6 +17,8 @@ function App() {
 
   return (
     <div className="min-h-screen bg-white text-slate-950">
+      <Modal />
+
       <header className="sticky top-0 z-10 bg-slate-800 px-5 py-5 text-white shadow-sm sm:px-8">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <h1 className="text-3xl font-bold tracking-normal sm:text-4xl">Ohtani Ahn</h1>
@@ -108,7 +106,7 @@ function App() {
           <div className="flex justify-center pb-10">
             <button
               type="button"
-              onClick={() => dispatch(clearCart())}
+              onClick={() => dispatch(openModal())}
               disabled={cartItems.length === 0}
               className="rounded border border-black px-7 py-4 text-base font-medium text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-300 disabled:hover:bg-white"
             >
