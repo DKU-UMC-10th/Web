@@ -1,22 +1,9 @@
-import { useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
 import Modal from './components/Modal'
-import {
-  calculateTotals,
-  decrease,
-  increase,
-  removeItem,
-} from './features/cart/cartSlice'
-import { openModal } from './features/modal/modalSlice'
-import type { AppDispatch, RootState } from './redux/store'
+import { usePlaylistStore } from './store/usePlaylistStore'
 
 function App() {
-  const dispatch = useDispatch<AppDispatch>()
-  const { amount, cartItems, total } = useSelector((state: RootState) => state.cart)
-
-  useEffect(() => {
-    dispatch(calculateTotals())
-  }, [cartItems, dispatch])
+  const { amount, cartItems, decrease, increase, openModal, removeItem, total } =
+    usePlaylistStore()
 
   return (
     <main className="min-h-screen bg-white font-sans text-slate-950">
@@ -67,7 +54,7 @@ function App() {
                 <button
                   className="mt-1 block text-xs font-semibold text-sky-600 transition hover:text-sky-800"
                   type="button"
-                  onClick={() => dispatch(removeItem(item.id))}
+                  onClick={() => removeItem(item.id)}
                 >
                   삭제
                 </button>
@@ -78,7 +65,7 @@ function App() {
                   className="h-[30px] w-6 bg-slate-300 transition hover:bg-slate-400"
                   type="button"
                   aria-label={`${item.title} decrease amount`}
-                  onClick={() => dispatch(decrease(item.id))}
+                  onClick={() => decrease(item.id)}
                 >
                   -
                 </button>
@@ -89,7 +76,7 @@ function App() {
                   className="h-[30px] w-6 bg-slate-300 transition hover:bg-slate-400"
                   type="button"
                   aria-label={`${item.title} increase amount`}
-                  onClick={() => dispatch(increase(item.id))}
+                  onClick={() => increase(item.id)}
                 >
                   +
                 </button>
@@ -105,7 +92,7 @@ function App() {
             <button
               className="mx-auto block rounded-md border border-slate-900 px-5 py-4 text-base font-semibold text-slate-900 transition hover:bg-slate-900 hover:text-white"
               type="button"
-              onClick={() => dispatch(openModal())}
+              onClick={openModal}
             >
               전체 삭제
             </button>
