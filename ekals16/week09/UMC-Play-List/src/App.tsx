@@ -1,12 +1,13 @@
 import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import Modal from './components/Modal'
 import {
   calculateTotals,
-  clearCart,
   decrease,
   increase,
   removeItem,
-} from './redux/cartSlice'
+} from './features/cart/cartSlice'
+import { openModal } from './features/modal/modalSlice'
 import type { AppDispatch, RootState } from './redux/store'
 
 function App() {
@@ -104,13 +105,15 @@ function App() {
             <button
               className="mx-auto block rounded-md border border-slate-900 px-5 py-4 text-base font-semibold text-slate-900 transition hover:bg-slate-900 hover:text-white"
               type="button"
-              onClick={() => dispatch(clearCart())}
+              onClick={() => dispatch(openModal())}
             >
               전체 삭제
             </button>
           </footer>
         </section>
       </div>
+
+      <Modal />
     </main>
   )
 }
