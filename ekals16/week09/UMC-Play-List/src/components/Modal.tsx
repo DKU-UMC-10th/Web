@@ -1,19 +1,10 @@
-import { useDispatch, useSelector } from 'react-redux'
-import { clearCart } from '../features/cart/cartSlice'
-import { closeModal } from '../features/modal/modalSlice'
-import type { AppDispatch, RootState } from '../redux/store'
+import { usePlaylistStore } from '../store/usePlaylistStore'
 
 function Modal() {
-  const dispatch = useDispatch<AppDispatch>()
-  const { isOpen } = useSelector((state: RootState) => state.modal)
+  const { clearCart, closeModal, isOpen } = usePlaylistStore()
 
   if (!isOpen) {
     return null
-  }
-
-  const handleConfirm = () => {
-    dispatch(clearCart())
-    dispatch(closeModal())
   }
 
   return (
@@ -31,14 +22,14 @@ function Modal() {
           <button
             className="rounded bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-300"
             type="button"
-            onClick={() => dispatch(closeModal())}
+            onClick={closeModal}
           >
             아니요
           </button>
           <button
             className="rounded bg-rose-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-600"
             type="button"
-            onClick={handleConfirm}
+            onClick={clearCart}
           >
             네
           </button>
