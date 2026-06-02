@@ -1,17 +1,16 @@
-import { useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
 import Modal from './components/Modal'
-import { calculateTotals, decrease, increase, removeItem } from './features/cart/cartSlice'
-import { openModal } from './features/modal/modalSlice'
-import type { AppDispatch, RootState } from './store'
+import { useCartStore } from './store'
 
 function App() {
-  const dispatch = useDispatch<AppDispatch>()
-  const { cartItems, amount, total } = useSelector((state: RootState) => state.cart)
-
-  useEffect(() => {
-    dispatch(calculateTotals())
-  }, [cartItems, dispatch])
+  const {
+    cartItems,
+    amount,
+    total,
+    increase,
+    decrease,
+    removeItem,
+    openModal,
+  } = useCartStore()
 
   const formattedTotal = total.toLocaleString('ko-KR')
 
@@ -61,7 +60,7 @@ function App() {
                   </p>
                   <button
                     type="button"
-                    onClick={() => dispatch(removeItem(item.id))}
+                    onClick={() => removeItem(item.id)}
                     className="mt-3 text-sm font-semibold text-slate-400 transition hover:text-red-500"
                   >
                     삭제
@@ -72,7 +71,7 @@ function App() {
                   <div className="grid h-10 w-36 grid-cols-3 overflow-hidden rounded border border-slate-300 bg-slate-200 text-lg font-semibold text-slate-800 sm:w-32">
                     <button
                       type="button"
-                      onClick={() => dispatch(decrease(item.id))}
+                      onClick={() => decrease(item.id)}
                       className="bg-slate-300 transition hover:bg-slate-400"
                       aria-label={`${item.title} 수량 감소`}
                     >
@@ -81,7 +80,7 @@ function App() {
                     <span className="flex items-center justify-center bg-white">{item.amount}</span>
                     <button
                       type="button"
-                      onClick={() => dispatch(increase(item.id))}
+                      onClick={() => increase(item.id)}
                       className="bg-slate-300 transition hover:bg-slate-400"
                       aria-label={`${item.title} 수량 증가`}
                     >
@@ -106,7 +105,7 @@ function App() {
           <div className="flex justify-center pb-10">
             <button
               type="button"
-              onClick={() => dispatch(openModal())}
+              onClick={openModal}
               disabled={cartItems.length === 0}
               className="rounded border border-black px-7 py-4 text-base font-medium text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-300 disabled:hover:bg-white"
             >
