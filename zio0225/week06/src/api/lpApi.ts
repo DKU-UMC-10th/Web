@@ -53,3 +53,27 @@ export const getLpsByTag = async (tagName: string) => {
     const { data } = await api.get(`/v1/lps/tag/${tagName}`);
     return data;
 };
+
+export const getLpComments = async (params: { lpid: string; cursor?: number; limit?: number; order?: 'asc' | 'desc' }) => {
+    const requestParams: Record<string, string | number> = {};
+
+    if (params.order) {
+        requestParams.order = params.order;
+    }
+    if (params.cursor != null) {
+        requestParams.cursor = params.cursor;
+    }
+    if (params.limit != null) {
+        requestParams.limit = params.limit;
+    }
+
+    const { data } = await api.get(`/v1/lps/${params.lpid}/comments`, {
+        params: requestParams,
+    });
+    return data;
+};
+
+export const postLpComment = async (lpid: string, content: string) => {
+    const { data } = await api.post(`/v1/lps/${lpid}/comments`, { content });
+    return data;
+};

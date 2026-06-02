@@ -1,0 +1,68 @@
+/* src/pages/LoginPage.css */
+
+.login-wrapper {
+    /* 화면 전체를 차지하게 강제 설정 */
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    
+    /* 중앙 정렬의 핵심 */
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    
+    /* 배경색 및 폰트 */
+    background-color: #ffffff !important; 
+    margin: 0 !important;
+    padding: 0 !important;
+    z-index: 9999; /* 다른 요소보다 위에 오도록 */
+}
+
+#center {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 20px !important;
+    width: 100% !important;
+    max-width: 400px !important;
+}
+
+/* 제목 스타일 */
+h1 {
+    color: #333 !important;
+    font-size: 2rem !important;
+    margin-bottom: 20px !important;
+}
+
+/* 입력창 스타일 */
+input {
+    width: 300px !important;
+    height: 45px !important;
+    padding: 0 15px !important;
+    border: 1px solid #ccc !important;
+    border-radius: 8px !important;
+    background-color: #f9f9f9 !important;
+    color: #333 !important;
+}
+
+/* 구글 로그인 버튼 */
+.google-login-btn {
+    width: 300px !important;
+    height: auto !important;
+    cursor: pointer !important;
+    margin-top: 10px !important;
+}
+
+/* 카운터 버튼 (로그인 버튼 대용) */
+.counter {
+    width: 300px !important;
+    height: 45px !important;
+    background-color: #000 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+}
