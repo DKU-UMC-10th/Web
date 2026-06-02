@@ -1,25 +1,67 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 import ErrorState from "../components/ErrorState";
-import LoadingState from "../components/LoadingState";
 import useGetLpList from "../hooks/queries/useGetLpList";
 import { PAGINATION_ORDER } from "../enums/common.ts";
 import type { PaginationOrder } from "../enums/common.ts";
 import formatUploadedAt from "../utils/formatUploadedAt";
 
+const LP_CARD_SKELETON_COUNT = 10;
+const LP_NEXT_PAGE_SKELETON_COUNT = 5;
+
+const LpCardSkeleton = () => {
+  return (
+    <div className="aspect-square overflow-hidden rounded bg-slate-400/80 ring-1 ring-white/10">
+      <div className="h-full w-full animate-pulse bg-gradient-to-r from-slate-500/40 via-slate-300/60 to-slate-500/40 bg-[length:200%_100%]" />
+    </div>
+  );
+};
+
 const HomePage = () => {
 
   const [search, setSearch] = useState("");
   const [order, setOrder] = useState<PaginationOrder>(PAGINATION_ORDER.desc);
-  const { data, isPending, isError, refetch } = useGetLpList({
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useGetLpList({
     search: search.trim() ? search : undefined,
     order,
   });
+  const lps = useMemo(
+    () => data?.pages.flatMap((page) => page.data.data) ?? [],
+    [data],
+  );
 
-  if (isPending) {
-    return <LoadingState />;
-  }
+  useEffect(() => {
+    const target = loadMoreRef.current;
+
+    if (!target) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: "160px" },
+    );
+
+    observer.observe(target);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   if (isError) {
     return <ErrorState onRetry={() => refetch()} />;
@@ -62,7 +104,12 @@ const HomePage = () => {
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        {data?.map((lp) => (
+        {isLoading &&
+          Array.from({ length: LP_CARD_SKELETON_COUNT }).map((_, index) => (
+            <LpCardSkeleton key={`initial-skeleton-${index}`} />
+          ))}
+
+        {lps.map((lp) => (
           <Link
             key={lp.id}
             to={`/lp/${lp.id}`}
@@ -95,6 +142,17 @@ const HomePage = () => {
             </div>
           </Link>
         ))}
+
+        {isFetchingNextPage &&
+          Array.from({ length: LP_NEXT_PAGE_SKELETON_COUNT }).map((_, index) => (
+            <LpCardSkeleton key={`next-page-skeleton-${index}`} />
+          ))}
+      </div>
+
+      <div ref={loadMoreRef} className="flex h-20 items-center justify-center">
+        {!hasNextPage && lps.length > 0 && (
+          <p className="text-xs text-white/40">No more LPs.</p>
+        )}
       </div>
 
       <Link

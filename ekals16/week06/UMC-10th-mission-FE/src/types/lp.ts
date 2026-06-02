@@ -1,4 +1,4 @@
-import type { CursorBasedResponse } from "./common";
+import type { CommonResponse } from "./common";
 
 export type Tag = {
     id: number;
@@ -33,8 +33,10 @@ export type Lp = {
     };
 }
 
-export type ResponseLpListDto = CursorBasedResponse<{
+export type ResponseLpListDto = CommonResponse<{
     data: Lp[];
+    nextCursor: number;
+    hasNext: boolean;
 }>;
 
 export type ResponseLpDetailDto = {
