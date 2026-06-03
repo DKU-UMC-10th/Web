@@ -141,7 +141,18 @@ select {
     cursor: pointer;
     padding: 0;
     text-align: left;
+    text-decoration: none;
     transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.detail-page {
+    text-align: center;
+}
+
+.back-link {
+    color: #2563eb;
+    font-weight: 700;
+    text-decoration: none;
 }
 
 .movie-card-button:hover {
