@@ -40,3 +40,18 @@ pnpm dev
 
 - Endpoint: `GET /3/search/movie`
 - 문서: [TMDB Search Movie](https://developer.themoviedb.org/reference/search-movie)
+
+## 4) Vercel SPA 라우팅
+
+새로고침 404를 막기 위해 프로젝트 루트의 [vercel.json](vercel.json) 에 아래 `rewrites` 설정이 들어 있습니다.
+
+```json
+{
+	"rewrites": [
+		{
+			"source": "/(.*)",
+			"destination": "/index.html"
+		}
+	]
+}
+```
